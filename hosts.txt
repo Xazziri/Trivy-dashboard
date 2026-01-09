@@ -1,0 +1,5 @@
+# List of servers to scan
+# Format: user@hostname
+localhost
+dockerhost1
+user@dockerhost2

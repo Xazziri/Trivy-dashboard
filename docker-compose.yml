@@ -1,0 +1,9 @@
+services:
+  nginx:
+    image: nginx:alpine-slim
+    container_name: trivy_reports
+    restart: unless-stopped
+    volumes:
+      - ./trivy_reports:/usr/share/nginx/html:ro
+    ports:
+      - 8888:80
