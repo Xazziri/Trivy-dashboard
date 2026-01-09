@@ -1,12 +1,12 @@
 # 🛡️ Trivy-dashboard
-This project provides a Bash script (`scan.sh`) that runs [Trivy](https://github.com/aquasecurity/trivy) vulnerability scans on multiple Docker hosts (local and remote) and generates a clean HTML dashboard per server.[web:86]
+This project provides a Bash script (`scan.sh`) that runs [Trivy](https://github.com/aquasecurity/trivy) vulnerability scans on multiple Docker hosts (local and remote) and generates a clean HTML dashboard per server.
 An Nginx container serves the generated reports so you can browse them easily in a browser on port `8888`.
 
 ---
 
 ## ✨ Features
 - Scan **multiple Docker hosts** (local and remote via SSH)
-- Automatically **update the Trivy vulnerability database** per host before scanning[web:86]
+- Automatically **update the Trivy vulnerability database** per host before scanning
 - Generate a **color‑coded HTML dashboard**:
   - One collapsible section per server
   - Per image:
@@ -48,7 +48,7 @@ One Linux host to host the script and dashboard with:
 
 On al hosts you want to scan:
 - Trivy
-- 
+- SSH key-based access
 ## Install Trivy following the official documentation: 
 See https://github.com/aquasecurity/trivy
 
