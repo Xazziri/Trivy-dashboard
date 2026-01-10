@@ -142,7 +142,7 @@ Remote template use:
 ### I am not a guru, I used an LLM so you should review and adapt the script to your environment and security policies before using it in production.
 
 ## 📄 License
-This project is licensed under the MIT License, a widely used permissive open‑source license.[web:1][web:8]
+This project is licensed under the MIT License, a widely used permissive open‑source license.
 See the LICENSE file for the full text.
 
 ## 🤖 AI Assistance Disclaimer
