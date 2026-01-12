@@ -3,32 +3,32 @@
 # --- Hardened / Strict Mode ---
 set -Eeuo pipefail
 
-# Beperk PATH om PATH-hijacking te voorkomen, maar houd docker/ssh/trivy bereikbaar.[web:248]
+# Limit PATH to prevent PATH-hijacking, keeping docker/ssh/trivy available
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-# --- Configuratie ---
+# --- Configuration ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOSTS_FILE="$SCRIPT_DIR/hosts.txt"
 TEMPLATE_FILE="$SCRIPT_DIR/html.tpl"
 REPORT_DIR="$SCRIPT_DIR/trivy_reports"
 INDEX_FILE="$REPORT_DIR/index.html"
 
-# --- Validatie ---
+# --- Validation ---
 if ! command -v jq >/dev/null 2>&1; then
-  echo "❌ FOUT: 'jq' ontbreekt (apt install jq)." >&2
+  echo "❌ ERROR: 'jq' missing (apt/dnf install jq)." >&2
   exit 1
 fi
 if [ ! -f "$TEMPLATE_FILE" ]; then
-  echo "❌ FOUT: 'html.tpl' niet gevonden in $SCRIPT_DIR" >&2
+  echo "❌ ERROR: unable to find 'html.tpl' in $SCRIPT_DIR" >&2
   exit 1
 fi
 if [ ! -f "$HOSTS_FILE" ]; then
-  echo "❌ FOUT: 'hosts.txt' niet gevonden in $SCRIPT_DIR" >&2
+  echo "❌ ERROR: unable to find 'hosts.txt' in $SCRIPT_DIR" >&2
   exit 1
 fi
 
 mkdir -p "$REPORT_DIR"
-# Opruimen alleen in eigen map
+# cleanup only in own folder
 find "$REPORT_DIR" -maxdepth 1 -type f -name "*.html" -delete
 find "$REPORT_DIR" -maxdepth 1 -type f -name "*.json" -delete
 
@@ -86,7 +86,7 @@ cat > "$INDEX_FILE" <<EOF
     <div style="color:#666; margin-bottom:20px;">Scan op: $(date)</div>
 EOF
 
-# --- Hulpfuncties ---
+# --- Support functions ---
 
 calculate_days_old() {
   local created_ts created_sec now_sec
@@ -152,7 +152,7 @@ add_row_for_image() {
   badges=""
   if [ "$crit" -gt 0 ]; then badges="$badges<span class=\"badge crit\">CRIT: $crit</span>"; fi
   if [ "$high" -gt 0 ]; then badges="$badges<span class=\"badge high\">HIGH: $high</span>"; fi
-  if [ -z "$badges" ]; then badges="<span class=\"badge safe\">Veilig</span>"; fi
+  if [ -z "$badges" ]; then badges="<span class=\"badge safe\">Safe</span>"; fi
 
   age_html="<span style=\"color:#999\">?</span>"
   if [ "$days_old" -ne "-1" ]; then
@@ -177,7 +177,7 @@ add_row_for_image() {
   SERVER_ROWS+="  <td><strong>$image</strong></td>"
   SERVER_ROWS+="  <td>$age_html</td>"
   SERVER_ROWS+="  <td>$badges</td>"
-  SERVER_ROWS+="  <td><a href=\"$html_link\" target=\"_self\">Bekijk Rapport</a></td>"
+  SERVER_ROWS+="  <td><a href=\"$html_link\" target=\"_self\">Open Report</a></td>"
   SERVER_ROWS+=$'\n</tr>\n'
 }
 
@@ -204,13 +204,13 @@ while IFS= read -r SERVER || [ -n "$SERVER" ]; do
     trivy image --download-db-only >/dev/null 2>&1 || true
   else
     if ! ssh -n -o BatchMode=yes -o ConnectTimeout=5 "$SERVER" "echo ok" >/dev/null 2>&1; then
-      echo "Geen verbinding met $SERVER, overslaan" >&2
+      echo "No connection to $SERVER, skipping" >&2
       continue
     fi
     ssh -n "$SERVER" "trivy image --download-db-only >/dev/null 2>&1" || true
   fi
 
-  # FASE 1: actieve containers
+  # FASE 1: active containers
   if [ "$IS_LOCAL" = "true" ]; then
     mapfile -t RAW_LIST < <(docker ps --format '{{.Image}}|{{.Names}}' | sort | uniq)
   else
@@ -256,7 +256,7 @@ while IFS= read -r SERVER || [ -n "$SERVER" ]; do
     SCANNED_ON_THIS_HOST="${SCANNED_ON_THIS_HOST} |${img}|"
   done
 
-  # FASE 2: inactieve images
+  # FASE 2: inactive images
   if [ "$IS_LOCAL" = "true" ]; then
     mapfile -t ALL_LIST < <(docker images --format "{{.Repository}}:{{.Tag}}" | grep -v '<none>' | sort | uniq)
   else
@@ -291,7 +291,7 @@ while IFS= read -r SERVER || [ -n "$SERVER" ]; do
     rm -f "$json_f"
   done
 
-  # Per-server blok schrijven: details ZONDER open -> standaard dicht.[web:247][web:259]
+  # Write per-server block: details default closed.
   if [ "$TOTAL_IMAGES" -gt 0 ]; then
     color_class=$(get_server_color_class "$SERVER")
     {
@@ -308,9 +308,9 @@ while IFS= read -r SERVER || [ -n "$SERVER" ]; do
       echo "            <th style=\"text-align:left; padding:8px; border-bottom:1px solid #eee;\">Status</th>"
       echo "            <th style=\"text-align:left; padding:8px; border-bottom:1px solid #eee;\">Container</th>"
       echo "            <th style=\"text-align:left; padding:8px; border-bottom:1px solid #eee;\">Image</th>"
-      echo "            <th style=\"text-align:left; padding:8px; border-bottom:1px solid #eee;\">Leeftijd</th>"
-      echo "            <th style=\"text-align:left; padding:8px; border-bottom:1px solid #eee;\">Kwetsbaarheden</th>"
-      echo "            <th style=\"text-align:left; padding:8px; border-bottom:1px solid #eee;\">Rapport</th>"
+      echo "            <th style=\"text-align:left; padding:8px; border-bottom:1px solid #eee;\">Age</th>"
+      echo "            <th style=\"text-align:left; padding:8px; border-bottom:1px solid #eee;\">Vulnerabilities</th>"
+      echo "            <th style=\"text-align:left; padding:8px; border-bottom:1px solid #eee;\">Report</th>"
       echo "          </tr>"
       echo "        </thead>"
       echo "        <tbody"
@@ -333,4 +333,4 @@ cat >> "$INDEX_FILE" <<EOF
 </html>
 EOF
 
-echo "✅ Klaar! Dashboard: $INDEX_FILE"
+echo "✅ Done! Dashboard: $INDEX_FILE"
