@@ -83,7 +83,7 @@ cat > "$INDEX_FILE" <<EOF
 <body>
   <div class="container">
     <h1>🛡️ Docker Security Audit</h1>
-    <div style="color:#666; margin-bottom:20px;">Scan op: $(date)</div>
+    <div style="color:#666; margin-bottom:20px;">Scanned: $(date)</div>
 EOF
 
 # --- Support functions ---
